@@ -1,5 +1,6 @@
 #include "pluginmanager.h"
-#include "mainwindow.h"  // Для доступа к MainWindow
+#include "mainwindow.h"
+#include "vtapi.h"
 
 PluginManager::PluginManager(MainWindow* mainWindow)
     : m_mainWindow(mainWindow) {
@@ -20,4 +21,8 @@ void PluginManager::loadPlugins() {
     }
 
     qDebug() << "All plugins loaded!";
+}
+
+void PluginManager::executeCommand(const QJsonObject& command) {
+
 }

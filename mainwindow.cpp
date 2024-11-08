@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
+#include "vtapi.h"
 #include <filesystem>
 #include <QUuid>
 #include <QLocale>
@@ -66,17 +67,22 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent)
     centralwidget->setLayout(horizontalLayout);
     this->setStatusBar(statusbar);
 
-    addTab();
     settings();
 
     QApplication *app = static_cast<QApplication *>(QCoreApplication::instance());
     VtAPI *api = new VtAPI(app);
+    this->api = api;
     this->windowInit();
+
+    VtAPI::Window* window = new VtAPI::Window(this->api, {}, nullptr, this);
+    this->api->addWindow(window);
+    this->api->setWindow(window);
 
     PluginManager *pl = new PluginManager(this);
     pl->loadPlugins();
 
     this->restoreWState();
+    addTab();
 }
 
 MainWindow::~MainWindow()
@@ -112,7 +118,11 @@ void MainWindow::addTab() {
 
     tabWidget->addTab(tab, "Untitled");
 
-    tabWidget->setCurrentIndex(tabWidget->count()-1);
+    VtAPI::View *view = new VtAPI::View(this->api, this->api->activeWindow(), tab);
+    this->api->activeWindow()->addView(view);
+    this->api->activeWindow()->focus(view);
+
+    qDebug() << this->api->activeWindow()->activeView();
 
     // // (Опционально) Обработка создания вкладки, например, сигнал
     // emit tabCreated();
@@ -188,10 +198,6 @@ void MainWindow::settings() {
     QDir(pluginsDir).mkpath(pluginsDir);
     QDir(uiDir).mkpath(uiDir);
     QDir(cacheDir).mkpath(cacheDir);
-
-    qInfo() << "App Name:" << appName;
-    qInfo() << "API Version:" << apiVersion;
-    qInfo() << "Locale:" << locale;
 }
 
 void MainWindow::dragEnterEvent(QDragEnterEvent *event) {
@@ -275,4 +281,3 @@ void MainWindow::restoreWState() {
 void MainWindow::saveWState() {
 
 }
-

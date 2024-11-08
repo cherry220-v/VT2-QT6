@@ -12,6 +12,7 @@
 #include <QFile>
 #include <QTextStream>
 #include <QMenu>
+#include <QObject>
 #include <QDialog>
 #include <QVBoxLayout>
 #include <QJsonObject>
@@ -22,12 +23,17 @@
 #include <QObject>
 #include <QVariantMap>
 
+class MainWindow;
+
 class VtAPI {
 public:
-    // Constructor for VtAPI
     VtAPI(QApplication *app);
     class Window;
     class View;
+    class Signals;
+    class Dialogs;
+    class Plugin;
+    class Widgets;
 
     void version();
     void arch();
@@ -43,17 +49,18 @@ public:
 
     class Window {
     public:
-        Window(VtAPI* api, QList<View*> views = {}, View* activeView = nullptr, QMainWindow* mw = nullptr);
+        Window(VtAPI* api, QList<View*> views = {}, View* activeView = nullptr, MainWindow* mw = nullptr);
 
         void newFile();
         void openFiles(const QStringList& files);
         void saveFile(bool dlg = false);
-        QWidget* getActiveView() const;
-        const QList<QWidget*>& views() const;
+        View* activeView() const;
+        const QList<View*>& views() const;
+        const Signals* wsignals() const;
         View* activeView();
-        void addView(QWidget* view);
-        void delView(QWidget* view);
-        void focus(QWidget* view);
+        void addView(View* view);
+        void delView(View* view);
+        void focus(View* view);
         void registerCommandClass(const QJsonObject& data);
         void registerCommand(const QJsonObject& data);
         void runCommand(const QJsonObject& command);
@@ -72,16 +79,58 @@ public:
         void statusMessage(const QString& text, int timeout = 0);
 
     private:
-        VtAPI* __api;
-        QMainWindow* __mw;
+        friend class View;
+        VtAPI *__api;
+        MainWindow* __mw;
+    private:
         QList<View*> __views;
-        View* __activeView;
+        Signals *__signals;
+        View *__activeView;
         QFileSystemModel* model;
         QDialog* dialog;
     };
 
+    class View {
+        public:
+            View(VtAPI* api, Window* window = nullptr, QWidget* qwclass = nullptr);
+
+            bool operator==(const View& other) const {
+                return (this->id == other.id);
+            }
+
+            QString getTitle() const;
+            void setTitle(const QString& text);
+            QString getText() const;
+            QString getHtml() const;
+            void setText(const QString& text);
+            QString getFile() const;
+            void setFile(const QString& file);
+            bool getCanSave() const;
+            void setCanSave(bool canSave);
+            bool getCanEdit() const;
+            void setReadOnly(bool readOnly);
+            QString getEncoding() const;
+            void setEncoding(const QString& enc);
+            bool getSaved() const;
+            void setSaved(bool saved);
+
+            QString id;
+            Window *window();
+            int tabIndex();
+            void update();
+            void close();
+        private:
+            VtAPI *__api;
+            Window *__window;
+            QWidget *__tab;
+            QTabWidget *__tabWidget;
+
+
+    };
+
 public:
     void addWindow(Window* window);
+    void setWindow(Window* window);
     Window* activeWindow();
     QList<Window*> windows() const;
 
@@ -89,6 +138,25 @@ private:
     QApplication* __app;
     QList<Window*> __windows;
     Window* __activeWindow;
+};
+class VtAPI::Signals : public QObject {
+    Q_OBJECT
+public:
+    explicit Signals(MainWindow *mw);
+signals:
+    void tabClosed();
+    void tabCreated();
+    void tabChanged();
+    void textChanged();
+    void windowClosed();
+    void windowStarted();
+    void logWrited(const QString&);
+
+    void treeWidgetClicked(const QModelIndex&);
+    void treeWidgetDoubleClicked(const QModelIndex&);
+    void treeWidgetActivated();
+private:
+    MainWindow* mw;
 };
 
 #endif // VtAPI_H

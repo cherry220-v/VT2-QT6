@@ -22,7 +22,8 @@
 #include <QMimeData>
 
 #include "pluginmanager.h"
-#include "vtapi.h"
+
+class VtAPI;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -40,6 +41,7 @@ public:
 
 private:
     friend class PluginManager;
+    friend class VtAPI;
 
     QString locale;
     QString appPath;
@@ -57,6 +59,9 @@ private:
 
 private:
     Ui::MainWindow *ui;
+
+private:
+    friend class VtAPI;
 
     QHBoxLayout *horizontalLayout;
     QWidget *centralWidget;
